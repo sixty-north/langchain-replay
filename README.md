@@ -92,6 +92,117 @@ agent = create_agent(model=..., tools=...)
 
 Option A is the recommended pattern.
 
+## Pytest configuration
+
+`langchain-replay` ships an optional pytest plugin. Install with the `[pytest]` extra:
+
+```bash
+pip install "langchain-replay[pytest]"
+```
+
+The plugin adds two CLI flags: `--record-fixtures` (enable recording/replay) and `--overwrite-fixtures` (force re-record). It exposes a `record_replay` fixture that returns an `AutoRecordReplayContext` when `--record-fixtures` is set, or `None` otherwise.
+
+### Minimal setup
+
+Override the `langchain_replay_registry` and `langchain_replay_recordings_dir` fixtures in your `conftest.py`:
+
+```python
+# conftest.py
+import pytest
+from pathlib import Path
+from langchain_replay import AgentFactoryRegistry
+
+@pytest.fixture
+def langchain_replay_registry():
+    registry = AgentFactoryRegistry()
+    registry.register("langchain.agents.create_agent")
+    return registry
+
+@pytest.fixture
+def langchain_replay_recordings_dir():
+    return Path(__file__).parent / "fixtures" / "recordings"
+```
+
+Then use the `record_replay` fixture in your tests:
+
+```python
+@pytest.mark.costly
+async def test_my_agent(record_replay):
+    if record_replay:
+        with record_replay.for_fixture("agents", "my_scenario"):
+            result = await run_my_agent()
+    else:
+        result = await run_my_agent()
+
+    assert result.status == "ok"
+```
+
+Run `pytest --record-fixtures` once to record; subsequent runs replay without API calls.
+
+### Gating expensive tests with a marker
+
+The example above uses `@pytest.mark.costly` to mark tests that make real API calls. This is a useful pattern but not built into the library — you wire it up yourself in `conftest.py`:
+
+```python
+# conftest.py
+def pytest_addoption(parser):
+    parser.addoption(
+        "--run-costly", action="store_true", default=False,
+        help="Run tests that incur external API costs",
+    )
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "costly: mark test as incurring external API costs")
+
+def pytest_collection_modifyitems(config, items):
+    if not config.getoption("--run-costly"):
+        skip = pytest.mark.skip(reason="needs --run-costly option")
+        for item in items:
+            if "costly" in item.keywords:
+                item.add_marker(skip)
+```
+
+Now `pytest` skips `@pytest.mark.costly` tests by default, and `pytest --run-costly --record-fixtures` enables both the marker and recording. This keeps your CI fast while letting you record new fixtures on demand.
+
+### Full setup with chat-model patching
+
+If your code also calls a chat model directly (outside of an agent), override `langchain_replay_chat_models` to intercept those calls:
+
+```python
+# conftest.py
+import pytest
+from pathlib import Path
+from langchain_anthropic import ChatAnthropic
+from langchain_replay import AgentFactoryRegistry
+
+@pytest.fixture
+def langchain_replay_registry():
+    registry = AgentFactoryRegistry()
+    registry.register("langchain.agents.create_agent")
+    registry.register("myproject.agents.build_agent")  # your own factories
+    return registry
+
+@pytest.fixture
+def langchain_replay_recordings_dir():
+    return Path(__file__).parent / "fixtures" / "recordings"
+
+@pytest.fixture
+def langchain_replay_chat_models():
+    return [(ChatAnthropic, "ainvoke")]
+```
+
+### Disabling the plugin
+
+If you use the library's classes directly (e.g. building `AutoRecordReplayContext` yourself in a custom fixture) and don't need the plugin's CLI flags or fixtures, disable it to avoid conflicts:
+
+```toml
+# pyproject.toml
+[tool.pytest.ini_options]
+addopts = "-p no:langchain_replay"
+```
+
+This is useful when your project already defines its own `--record-fixtures` or `--overwrite-fixtures` options.
+
 ## Tests must be deterministic
 
 `langchain-replay` records the LLM's *decisions*, not the universe those decisions were made in. On replay, recorded tool inputs are dispatched verbatim. If your test feeds non-deterministic values into the LLM prompt — a fresh timestamp, a `uuid.uuid4()`, a `tmp_path` from pytest — those values get baked into the recorded tool calls and replayed exactly as they were captured. The replay run will not see today's timestamp; it will see the recording day's timestamp.
