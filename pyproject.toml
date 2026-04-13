@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-replay"
+version = "0.1.0"
+description = "Record and replay LangChain/LangGraph agent decisions while tools execute against the real filesystem."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "Sixty North" }]
+keywords = ["langchain", "langgraph", "testing", "record", "replay", "agents", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Pytest",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "langchain-core>=0.3,<0.4",
+]
+
+[project.optional-dependencies]
+pytest = ["pytest>=7.0"]
+
+[project.urls]
+Homepage = "https://github.com/yourname/langchain-replay"
+Issues = "https://github.com/yourname/langchain-replay/issues"
+
+[project.entry-points.pytest11]
+langchain_replay = "langchain_replay.pytest_plugin"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/langchain_replay"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
