@@ -203,6 +203,59 @@ addopts = "-p no:langchain_replay"
 
 This is useful when your project already defines its own `--record-fixtures` or `--overwrite-fixtures` options.
 
+## Using with unittest
+
+The core classes are plain context managers with no pytest dependency. To use with `unittest`, build the registry and context directly and control recording via an environment variable:
+
+```python
+import asyncio
+import os
+import unittest
+from pathlib import Path
+
+import langchain.agents
+from langchain_replay import AgentFactoryRegistry, AutoRecordReplayContext
+
+RECORDINGS = Path(__file__).parent / "recordings"
+RECORD = os.environ.get("RECORD_FIXTURES") == "1"
+OVERWRITE = os.environ.get("OVERWRITE_FIXTURES") == "1"
+
+registry = AgentFactoryRegistry()
+registry.register("langchain.agents.create_agent")
+
+ctx = AutoRecordReplayContext(RECORDINGS, agent_registry=registry, overwrite=OVERWRITE)
+
+
+class TestMyAgent(unittest.IsolatedAsyncioTestCase):
+
+    async def test_explains_topic(self):
+        if RECORD:
+            with ctx.for_fixture("agents", "explain_topic"):
+                result = await self.run_agent()
+        else:
+            result = await self.run_agent()
+        self.assertIn("messages", result)
+
+    async def run_agent(self):
+        agent = langchain.agents.create_agent(
+            model="claude-haiku-4-5-20251001", tools=[...]
+        )
+        return await agent.ainvoke(
+            {"messages": [{"role": "user", "content": "Explain monads."}]}
+        )
+```
+
+```bash
+# First run — records fixtures (makes real API calls)
+RECORD_FIXTURES=1 python -m unittest
+
+# Subsequent runs — replays without API calls
+python -m unittest
+
+# Re-record existing fixtures
+RECORD_FIXTURES=1 OVERWRITE_FIXTURES=1 python -m unittest
+```
+
 ## Tests must be deterministic
 
 `langchain-replay` records the LLM's *decisions*, not the universe those decisions were made in. On replay, recorded tool inputs are dispatched verbatim. If your test feeds non-deterministic values into the LLM prompt — a fresh timestamp, a `uuid.uuid4()`, a `tmp_path` from pytest — those values get baked into the recorded tool calls and replayed exactly as they were captured. The replay run will not see today's timestamp; it will see the recording day's timestamp.
