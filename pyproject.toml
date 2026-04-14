@@ -44,10 +44,22 @@ packages = ["src/langchain_replay"]
 
 [dependency-groups]
 dev = [
+    "bump-my-version>=0.30",
     "pytest>=7.0",
     "pytest-asyncio>=0.23",
     "ruff>=0.4",
 ]
+
+[tool.bumpversion]
+current_version = "0.1.0"
+commit = true
+tag = true
+tag_name = "v{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
 
 [tool.ruff]
 target-version = "py310"

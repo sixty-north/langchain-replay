@@ -270,6 +270,43 @@ The fix is at the test level, not the library level:
 
 If you find a class of non-determinism that genuinely cannot be designed away, open an issue describing the workflow — that's the kind of feedback that will shape the post-0.1 API.
 
+## Releasing
+
+Versioning is managed with [bump-my-version](https://github.com/callowayproject/bump-my-version). It updates the version in `pyproject.toml`, commits the change, and creates a Git tag in one step.
+
+```bash
+# Install dev dependencies (includes bump-my-version)
+uv sync --group dev
+
+# Bump the patch version: 0.1.0 -> 0.1.1
+uv run bump-my-version bump patch
+
+# Bump the minor version: 0.1.1 -> 0.2.0
+uv run bump-my-version bump minor
+
+# Bump the major version: 0.2.0 -> 1.0.0
+uv run bump-my-version bump major
+```
+
+To preview what a bump would do without changing anything:
+
+```bash
+uv run bump-my-version bump patch --dry-run --verbose
+```
+
+After bumping, push the commit and tag together:
+
+```bash
+git push && git push --tags
+```
+
+To build and publish to PyPI:
+
+```bash
+uv build
+uv publish
+```
+
 ## License
 
 Apache 2.0.
