@@ -286,7 +286,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-core", specifier = ">=0.3,<0.4" },
+    { name = "langchain-core", specifier = ">=0.3" },
     { name = "pytest", marker = "extra == 'pytest'", specifier = ">=7.0" },
 ]
 provides-extras = ["pytest"]
