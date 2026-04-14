@@ -1,5 +1,9 @@
 """langchain-replay: record and replay LangChain agent decisions while tools execute live."""
 
+from importlib.metadata import version
+
+__version__ = version("langchain-replay")
+
 from langchain_replay._models import RecordedAskCall, RecordedEvent, RecordedTurn
 from langchain_replay.context import (
     AutoRecordReplayContext,
