@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain_replay._models import RecordedAskCall, RecordedTurn
+from langchain_replay._models import RecordedAskCall
 from langchain_replay.recorder import ConversationRecorder
 
 
@@ -15,6 +15,7 @@ def recorder():
 
 
 # ---------- start_turn / record_event / end_turn ----------
+
 
 def test_records_tool_start_event(recorder):
     recorder.start_turn("agent", "hello")
@@ -83,11 +84,13 @@ def test_chain_end_for_langgraph_sets_response_and_does_not_emit_event(recorder)
         tool_calls: list = []
 
     recorder.start_turn("agent", "q")
-    recorder.record_event({
-        "event": "on_chain_end",
-        "name": "LangGraph",
-        "data": {"output": {"messages": [Msg()]}},
-    })
+    recorder.record_event(
+        {
+            "event": "on_chain_end",
+            "name": "LangGraph",
+            "data": {"output": {"messages": [Msg()]}},
+        }
+    )
     recorder.end_turn()
 
     turn = recorder.turns[0]
@@ -109,12 +112,14 @@ def test_starting_a_new_turn_finalizes_the_previous_one(recorder):
 
 # ---------- record_ask_call ----------
 
+
 def test_record_ask_call(recorder):
     recorder.record_ask_call("why?", "because")
     assert recorder.ask_calls == [RecordedAskCall(prompt="why?", response="because")]
 
 
 # ---------- save ----------
+
 
 def test_save_writes_jsonl_and_metadata(tmp_path: Path, recorder):
     recorder.start_turn("agent", "hello")

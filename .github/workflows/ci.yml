@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Extract Python versions from pyproject.toml classifiers so the test
+  # matrix stays in sync with the declared supported versions.
+  resolve-python-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.extract.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: extract
+        run: |
+          versions=$(python -c "
+          import tomllib, json, pathlib
+          data = tomllib.loads(pathlib.Path('pyproject.toml').read_text())
+          vs = [
+              c.rsplit(' :: ', 1)[-1]
+              for c in data['project']['classifiers']
+              if c.startswith('Programming Language :: Python :: 3.')
+          ]
+          print(json.dumps(vs))
+          ")
+          echo "versions=$versions" >> "$GITHUB_OUTPUT"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --group dev
+      - run: uv run ruff check src/ tests/
+      - run: uv run ruff format --check src/ tests/
+
+  test:
+    needs: resolve-python-versions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(needs.resolve-python-versions.outputs.versions) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv python install ${{ matrix.python-version }}
+
+      - name: Build package
+        run: uv build
+
+      - name: Install wheel and dev dependencies
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          uv pip install dist/*.whl
+          uv pip install pytest pytest-asyncio
+
+      - name: Run tests against installed package
+        run: uv run pytest

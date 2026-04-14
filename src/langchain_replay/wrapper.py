@@ -34,10 +34,7 @@ class RecordingAgentWrapper:
         try:
             async for event in self._agent.astream_events(messages, **stream_kwargs):
                 self._recorder.record_event(event)
-                if (
-                    event.get("event") == "on_chain_end"
-                    and event.get("name") == "LangGraph"
-                ):
+                if event.get("event") == "on_chain_end" and event.get("name") == "LangGraph":
                     final_response = event.get("data", {}).get("output")
         finally:
             self._recorder.end_turn()

@@ -94,10 +94,14 @@ async def test_ainvoke_extracts_user_message_from_messages_dict():
     agent = FakeAgent()
     recorder = ConversationRecorder()
     wrapped = RecordingAgentWrapper(agent, recorder)
-    await wrapped.ainvoke({"messages": [
-        {"role": "system", "content": "ignore me"},
-        {"role": "user", "content": "the question"},
-    ]})
+    await wrapped.ainvoke(
+        {
+            "messages": [
+                {"role": "system", "content": "ignore me"},
+                {"role": "user", "content": "the question"},
+            ]
+        }
+    )
     assert recorder.turns[0].user_message == "the question"
 
 

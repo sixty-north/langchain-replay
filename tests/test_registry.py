@@ -92,6 +92,7 @@ def test_patch_all_handles_multiple_targets(fake_module):
     # Register a second target on the same module
     def other_factory():
         return "other"
+
     fake_module.other_factory = other_factory
 
     reg = AgentFactoryRegistry()

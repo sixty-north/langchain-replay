@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessage  # noqa: F401  (kept for forward compat)
 
-from langchain_replay._models import RecordedAskCall, RecordedEvent, RecordedTurn
+from langchain_replay._models import RecordedAskCall, RecordedTurn
 from langchain_replay.exceptions import (
     FixtureNotFoundError,
     ReplayExhaustedError,
@@ -56,8 +56,7 @@ class ReplayAgent:
     def _next_turn(self) -> RecordedTurn:
         if self._turn_index >= len(self._turns):
             raise ReplayExhaustedError(
-                f"No more recorded turns (requested turn {self._turn_index + 1}, "
-                f"have {len(self._turns)})"
+                f"No more recorded turns (requested turn {self._turn_index + 1}, have {len(self._turns)})"
             )
         turn = self._turns[self._turn_index]
         self._turn_index += 1
@@ -135,8 +134,7 @@ class ReplayAskHandler:
     def get_next_response(self, prompt: str) -> str:
         if self._index >= len(self._ask_calls):
             raise ReplayExhaustedError(
-                f"No more recorded ask calls (requested call {self._index + 1}, "
-                f"have {len(self._ask_calls)})"
+                f"No more recorded ask calls (requested call {self._index + 1}, have {len(self._ask_calls)})"
             )
         call = self._ask_calls[self._index]
         self._index += 1

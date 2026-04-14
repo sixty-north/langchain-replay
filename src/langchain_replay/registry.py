@@ -63,6 +63,7 @@ class AgentFactoryRegistry:
                 def make_wrapper(orig):
                     def wrapper(*args, **kwargs):
                         return transform(orig, *args, **kwargs)
+
                     return wrapper
 
                 setattr(module, attr, make_wrapper(original))

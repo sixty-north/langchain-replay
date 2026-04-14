@@ -161,8 +161,7 @@ class ConversationRecorder:
                         msg_dict["content"] = [self._serialize_block(b) for b in content]
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                     msg_dict["tool_calls"] = [
-                        {"name": tc.get("name", ""), "args": self._safe(tc.get("args", {}))}
-                        for tc in msg.tool_calls
+                        {"name": tc.get("name", ""), "args": self._safe(tc.get("args", {}))} for tc in msg.tool_calls
                     ]
                 messages.append(msg_dict)
             result["messages"] = messages

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import AbstractContextManager, ExitStack, contextmanager
 from pathlib import Path
-from typing import Any, Iterator, Sequence
+from typing import Iterator, Sequence
 from unittest.mock import patch
 
 from langchain_core.messages import AIMessage
@@ -14,7 +14,6 @@ from langchain_replay.recorder import ConversationRecorder
 from langchain_replay.registry import AgentFactoryRegistry
 from langchain_replay.replayer import ReplayAgent, ReplayAskHandler, load_recording
 from langchain_replay.wrapper import RecordingAgentWrapper
-
 
 ChatModelTarget = tuple[type, str]
 
@@ -70,9 +69,7 @@ class ReplayContext:
     def for_fixture(self, master_type: str, fixture_name: str) -> Iterator[None]:
         fixture_dir = self._recordings_dir / master_type / fixture_name
         if not fixture_dir.exists():
-            raise FixtureNotFoundError(
-                f"Fixture not found: {fixture_dir}. Record it first."
-            )
+            raise FixtureNotFoundError(f"Fixture not found: {fixture_dir}. Record it first.")
 
         ask_calls, turns = load_recording(fixture_dir)
         ask_handler = ReplayAskHandler(ask_calls)
@@ -137,9 +134,7 @@ class AutoRecordReplayContext:
 
 
 @contextmanager
-def _patch_chat_model_for_recording(
-    cls: type, method_name: str, recorder: ConversationRecorder
-) -> Iterator[None]:
+def _patch_chat_model_for_recording(cls: type, method_name: str, recorder: ConversationRecorder) -> Iterator[None]:
     original = getattr(cls, method_name)
 
     async def recording_method(self, prompt, *args, **kwargs):
@@ -154,9 +149,7 @@ def _patch_chat_model_for_recording(
 
 
 @contextmanager
-def _patch_chat_model_for_replay(
-    cls: type, method_name: str, ask_handler: ReplayAskHandler
-) -> Iterator[None]:
+def _patch_chat_model_for_replay(cls: type, method_name: str, ask_handler: ReplayAskHandler) -> Iterator[None]:
     async def replay_method(self, prompt, *args, **kwargs):
         return AIMessage(content=ask_handler.get_next_response(str(prompt)))
 

@@ -15,8 +15,8 @@ from langchain_replay.registry import AgentFactoryRegistry
 from langchain_replay.replayer import ReplayAgent
 from langchain_replay.wrapper import RecordingAgentWrapper
 
-
 # ---------- Fake agent module ----------
+
 
 class FakeRealAgent:
     """A "real" agent that we record/replay against."""
@@ -77,15 +77,14 @@ def registry(fake_factory_module):
 
 # ---------- RecordingContext ----------
 
+
 async def _drive(agent, messages):
     """Drive an agent via astream_events (so the recorder captures tool events)."""
     async for _ in agent.astream_events(messages):
         pass
 
 
-async def test_ainvoke_only_workflow_records_tool_events_and_replays(
-    tmp_path, registry, fake_factory_module
-):
+async def test_ainvoke_only_workflow_records_tool_events_and_replays(tmp_path, registry, fake_factory_module):
     """Mirrors the README example: user calls ``await agent.ainvoke(...)``
     once to record, then again to replay. The wrapper must drive
     astream_events under the hood so that tool events end up in the
@@ -115,6 +114,7 @@ async def test_ainvoke_only_workflow_records_tool_events_and_replays(
 
     # The recording should contain the tool events
     import json
+
     lines = (recordings / "e2e" / "case" / "recording.jsonl").read_text().strip().splitlines()
     parsed = [json.loads(line) for line in lines]
     turn = next(p for p in parsed if p["type"] == "turn")
@@ -169,6 +169,7 @@ async def test_recording_context_writes_fixture_files(tmp_path, registry, fake_f
 
 # ---------- ReplayContext ----------
 
+
 async def test_replay_context_replays_recorded_fixture(tmp_path, registry, fake_factory_module):
     recordings = tmp_path / "recordings"
     out_dir = tmp_path / "out"
@@ -209,6 +210,7 @@ async def test_replay_context_replays_recorded_fixture(tmp_path, registry, fake_
 
 async def test_replay_context_raises_on_missing_fixture(tmp_path, registry):
     from langchain_replay.exceptions import FixtureNotFoundError
+
     rep_ctx = ReplayContext(tmp_path, agent_registry=registry)
     with pytest.raises(FixtureNotFoundError):
         with rep_ctx.for_fixture("nope", "missing"):
@@ -216,6 +218,7 @@ async def test_replay_context_raises_on_missing_fixture(tmp_path, registry):
 
 
 # ---------- AutoRecordReplayContext ----------
+
 
 async def test_auto_records_first_time_then_replays(tmp_path, registry, fake_factory_module):
     recordings = tmp_path / "recordings"
@@ -277,6 +280,7 @@ async def test_auto_overwrite_re_records(tmp_path, registry, fake_factory_module
 
 # ---------- chat-model patching for direct ask() calls ----------
 
+
 class FakeChatModel:
     """A "real" chat model class with an ainvoke method."""
 
@@ -304,6 +308,7 @@ async def test_recording_context_records_chat_model_calls(tmp_path, registry, fa
 
     # Recording contains an ask_call line
     import json
+
     lines = (recordings / "g" / "c" / "recording.jsonl").read_text().strip().splitlines()
     parsed = [json.loads(line) for line in lines]
     ask_calls = [p for p in parsed if p["type"] == "ask_call"]
@@ -317,7 +322,8 @@ async def test_replay_context_replays_chat_model_calls(tmp_path, registry, fake_
 
     # Record
     rec = RecordingContext(
-        recordings, agent_registry=registry,
+        recordings,
+        agent_registry=registry,
         chat_models_to_patch=[(FakeChatModel, "ainvoke")],
     )
     with rec.for_fixture("g", "c"):
@@ -325,12 +331,14 @@ async def test_replay_context_replays_chat_model_calls(tmp_path, registry, fake_
 
     # Replay
     rep = ReplayContext(
-        recordings, agent_registry=registry,
+        recordings,
+        agent_registry=registry,
         chat_models_to_patch=[(FakeChatModel, "ainvoke")],
     )
     with rep.for_fixture("g", "c"):
         # Even though FakeChatModel returns "REAL-LLM-OUTPUT", replay should yield the recorded value
         result = await FakeChatModel().ainvoke("q")
         from langchain_core.messages import AIMessage
+
         assert isinstance(result, AIMessage)
         assert result.content == "REAL-LLM-OUTPUT"

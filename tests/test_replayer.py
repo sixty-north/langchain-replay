@@ -27,6 +27,7 @@ class FakeTool:
 
 # ---------- ReplayAgent ----------
 
+
 async def test_replay_agent_executes_recorded_tools():
     turn = RecordedTurn(
         phase="agent",
@@ -54,7 +55,8 @@ async def test_replay_agent_raises_when_exhausted():
 
 async def test_replay_agent_raises_on_unknown_tool():
     turn = RecordedTurn(
-        phase="agent", user_message="hi",
+        phase="agent",
+        user_message="hi",
         events=[RecordedEvent(event_type="on_tool_start", name="missing", data={"input": {}})],
     )
     agent = ReplayAgent([turn], tools=[FakeTool("other")])
@@ -64,7 +66,8 @@ async def test_replay_agent_raises_on_unknown_tool():
 
 async def test_replay_agent_astream_events_yields_then_executes(tmp_path):
     turn = RecordedTurn(
-        phase="agent", user_message="hi",
+        phase="agent",
+        user_message="hi",
         events=[
             RecordedEvent(event_type="on_tool_start", name="t", data={"input": {"k": "v"}}),
             RecordedEvent(event_type="on_tool_end", name="t", data={"output": "ok"}),
@@ -88,11 +91,14 @@ async def test_replay_agent_astream_events_yields_then_executes(tmp_path):
 
 # ---------- ReplayAskHandler ----------
 
+
 def test_ask_handler_returns_recorded_responses_in_order():
-    handler = ReplayAskHandler([
-        RecordedAskCall(prompt="p1", response="r1"),
-        RecordedAskCall(prompt="p2", response="r2"),
-    ])
+    handler = ReplayAskHandler(
+        [
+            RecordedAskCall(prompt="p1", response="r1"),
+            RecordedAskCall(prompt="p2", response="r2"),
+        ]
+    )
     assert handler.get_next_response("any") == "r1"
     assert handler.get_next_response("any") == "r2"
 
@@ -105,18 +111,21 @@ def test_ask_handler_raises_when_exhausted():
 
 # ---------- load_recording ----------
 
+
 def test_load_recording_round_trip(tmp_path):
     target = tmp_path / "fx"
     target.mkdir()
     lines = [
         json.dumps({"type": "ask_call", "prompt": "p", "response": "r"}),
-        json.dumps({
-            "type": "turn",
-            "phase": "agent",
-            "user_message": "hi",
-            "events": [{"event_type": "on_tool_start", "name": "t", "data": {"input": {}}}],
-            "response": {},
-        }),
+        json.dumps(
+            {
+                "type": "turn",
+                "phase": "agent",
+                "user_message": "hi",
+                "events": [{"event_type": "on_tool_start", "name": "t", "data": {"input": {}}}],
+                "response": {},
+            }
+        ),
     ]
     (target / "recording.jsonl").write_text("\n".join(lines))
 
@@ -129,5 +138,6 @@ def test_load_recording_round_trip(tmp_path):
 
 def test_load_recording_raises_when_missing(tmp_path):
     from langchain_replay.exceptions import FixtureNotFoundError
+
     with pytest.raises(FixtureNotFoundError):
         load_recording(tmp_path / "nope")
