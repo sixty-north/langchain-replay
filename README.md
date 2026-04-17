@@ -38,19 +38,18 @@ ctx = AutoRecordReplayContext(Path("tests/replay-recordings"), agent_registry=re
 tools = [WriteFileTool(root_dir=str(Path(__file__).parent.absolute()))]
 
 topic = "Vapnik-Chervonenkis dimension"
-filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".md"
 messages = {
     "messages": [
         {
             "role": "user",
-            "content": f"Briefly explain {topic} and write it to a file called {filename}.",
+            "content": f"Briefly explain {topic} and write it to a file called vcd.md.",
         }
     ]
 }
 
 
 async def main():
-    with ctx.for_fixture("my_test", "first_run"):
+    with ctx.for_fixture("my_test", "vcd_explanation"):
         agent = langchain.agents.create_agent(model="claude-haiku-4-5-20251001", tools=tools)
         result = await agent.ainvoke(messages)
         print(result)
@@ -60,7 +59,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-The first run records `tests/replay-recordings/my_test/first_run/recording.jsonl` and writes the markdown file for real. Subsequent runs replay the LLM's decisions without any API calls — but `WriteFileTool` still executes, so the file is recreated on every run.
+The first run records `tests/replay-recordings/my_test/vcd_explanation/recording.jsonl` and writes the markdown file for real. Subsequent runs replay the LLM's decisions without any API calls — but `WriteFileTool` still executes, so the file is recreated on every run.
 
 ## Where to patch — important
 
