@@ -75,6 +75,9 @@ class ConversationRecorder:
                 elif isinstance(content, list):
                     recorded.data = {"content": [self._serialize_block(b) for b in content]}
 
+        if not recorded.data:
+            return
+
         self._current_turn.events.append(recorded)
 
     def set_response(self, response: Any) -> None:

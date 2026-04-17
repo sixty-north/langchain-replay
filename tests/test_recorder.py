@@ -110,6 +110,46 @@ def test_starting_a_new_turn_finalizes_the_previous_one(recorder):
     assert [t.phase for t in recorder.turns] == ["a", "b"]
 
 
+def test_events_with_no_extracted_data_are_not_recorded(recorder):
+    """Stream and lifecycle events that the recorder cannot populate are dropped.
+
+    LangGraph emits many ``on_chain_start``, ``on_chain_stream``,
+    ``on_chat_model_start``, and ``on_chat_model_stream`` events that the
+    recorder has no use for — they would otherwise accumulate as empty
+    placeholders that bloat fixtures and serve no replay purpose.
+    """
+    recorder.start_turn("agent", "q")
+    recorder.record_event({"event": "on_chain_start", "name": "x", "data": {}})
+    recorder.record_event({"event": "on_chain_stream", "name": "x", "data": {}})
+    recorder.record_event({"event": "on_chat_model_start", "name": "x", "data": {}})
+    for _ in range(5):
+        recorder.record_event({"event": "on_chat_model_stream", "name": "x", "data": {}})
+    recorder.record_event({"event": "on_tool_start", "name": "t", "data": {"input": {"x": 1}}})
+    recorder.record_event({"event": "on_chain_end", "name": "x", "data": {}})
+    recorder.end_turn()
+
+    assert len(recorder.turns[0].events) == 1
+    assert recorder.turns[0].events[0].event_type == "on_tool_start"
+
+
+def test_chat_model_end_without_content_is_not_recorded(recorder):
+    """An ``on_chat_model_end`` event whose output has no content is dropped.
+
+    The replay path only consumes the assembled content; an empty event would
+    add nothing.
+    """
+    recorder.start_turn("agent", "q")
+    recorder.record_event({"event": "on_chat_model_end", "data": {}})
+
+    class NoContent:
+        pass
+
+    recorder.record_event({"event": "on_chat_model_end", "data": {"output": NoContent()}})
+    recorder.end_turn()
+
+    assert recorder.turns[0].events == []
+
+
 # ---------- record_ask_call ----------
 
 
