@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-replay"
-version = "0.1.1"
+version = "0.1.2"
 description = "Record and replay LangChain/LangGraph agent decisions while tools execute against the real filesystem."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -51,7 +51,7 @@ dev = [
 ]
 
 [tool.bumpversion]
-current_version = "0.1.1"
+current_version = "0.1.2"
 commit = true
 tag = true
 tag_name = "v{new_version}"
